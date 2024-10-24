@@ -1,0 +1,119 @@
+#!/bin/bash
+# Useful bash functions
+
+function function_test {
+   echo "functions are working!"
+}
+
+# Usage: mcd somedir
+# Creates the directory if it doesn't exist, and changes into it
+function mcd {
+    mkdir -p "${1}" &&
+    cd "${1}"
+}
+
+# Usage: svn_pull http://path/to/repository
+# Does an svn co <repo>, cd into directory, then svn up --depth to three folders
+function svn_pull {
+    # Check if a URL is provided
+    if [ -z "$1" ]; then
+        echo "Usage: svn_pull <URL>"
+        return 1
+    fi
+
+    # Get the SVN branch URL
+    BRANCH_URL="$1"
+
+    # Extract the directory name from the URL
+    DIR_NAME=$(basename "$BRANCH_URL")
+
+    # Perform SVN checkout with --depth immediates
+    echo "Checking out $BRANCH_URL with depth 'immediates'"
+    svn checkout --depth immediates "$BRANCH_URL" > /dev/null
+
+    # Check if checkout was successful and directory exists
+    if [ -d "$DIR_NAME" ]; then
+        # Change into the checked-out directory
+        cd "$DIR_NAME" || { echo "Failed to enter $DIR_NAME"; return 1; }
+
+        # Run the three SVN update commands
+        echo "Running SVN updates in $(pwd)"
+        svn up --set-depth infinity SOURCE && \
+        svn up --set-depth immediates TOOLS && \
+        svn up --set-depth infinity TOOLS/Scripts > /dev/null
+        echo "Success checking out $DIR_NAME"
+    else
+        echo "Checkout failed or directory $DIR_NAME does not exist."
+        return 1
+    fi
+}
+
+# Usage svn_search partial-branch-name
+# Find a branch if you don't remember the whole name
+svn_search() {
+    # Check if a partial name is provided
+    if [ -z "$1" ]; then
+        echo "Usage: svn_search <partial_branch_name>"
+        return 1
+    fi
+
+    # Partial name to search for
+    PARTIAL_NAME="$1"
+
+    # Base SVN URL
+    BASE_URL="https://hqswsvn/svn/Common_Basic_Services/MainLine/branches/scr/"
+
+    # List all branches from the SVN repository
+    echo "Searching for branches containing '$PARTIAL_NAME' in $BASE_URL..."
+
+    # Fetch the list of branches and filter by the partial name using grep
+    MATCHES=$(svn ls "$BASE_URL" | grep "$PARTIAL_NAME" | awk '{print "'$BASE_URL'" $0}')
+
+    # Check if there are any matches
+    if [ -z "$MATCHES" ]; then
+        echo "No matches found for '$PARTIAL_NAME'."
+    else
+        echo "Matches found:"
+        echo "$MATCHES"
+        echo ""
+    fi
+
+    # Base SVN URL
+    BASE_URL="https://hqswsvn/svn/Common_Basic_Services/MainLine/tags/branch-bases/"
+
+    # List all branches from the SVN repository
+    echo "Searching for branches containing '$PARTIAL_NAME' in $BASE_URL..."
+
+    # Fetch the list of branches and filter by the partial name using grep
+    MATCHES=$(svn ls "$BASE_URL" | grep "$PARTIAL_NAME" | awk '{print "'$BASE_URL'" $0}')
+
+    # Check if there are any matches
+    if [ -z "$MATCHES" ]; then
+        echo "No matches found for '$PARTIAL_NAME'."
+    else
+        echo "Matches found:"
+        echo "$MATCHES"
+        echo ""
+    fi
+}
+
+list_functions_in_c_file() {
+    local file_path="$1"
+
+    # Use grep to match function definitions and awk to extract function names
+    grep -E '^[a-zA-Z_]{1,2}[a-zA-Z0-9_]*\s+\**[a-zA-Z_][a-zA-Z0-9_]*\s*\([^)]*\)\s*{' "$file_path" | \
+    awk '{for(i=1;i<=NF;i++){if($i ~ /^[a-zA-Z_][a-zA-Z0-9_]*$/ && $(i+1) ~ /\(/){gsub("\\(.*", "", $(i+1)); print $(i+1); break}}}'
+}
+
+# tat: tmux attach
+function tat {
+    name=$(basename `pwd` | sed -e 's/\.//g')
+
+    if tmux ls 2>&1 | grep "$name"; then
+        tmux attach -t "$name"
+    elif [ -f .envrc ]; then
+        direnv exec / tmux new-session -s "$name"
+    else
+        tmux new-session -s "$name"
+    fi
+}

@@ -1,0 +1,8 @@
+# useful aliases
+
+alias svn_stdup='svn up --set-depth infinity SOURCE && svn up --set-depth immediates TOOLS && svn up --set-depth infinity TOOLS/Scripts'
+alias ut_make='make TARGET_PLATFORM=AFS6400_ACD TARGET_AIRCRAFT=AGCS dataloading_unit_test -s'
+alias histgrep='history | grep '
+alias svn_stdco='svn co --depth immediates '
+alias tmux='tmux -2'
+
