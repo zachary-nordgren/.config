@@ -123,5 +123,6 @@ fi
 [[ -f ~/.bash-preexec.sh ]] && source ~/.bash-preexec.sh
 eval "$(atuin init bash)"
 
+export GCM_CREDENTIAL_STORE="plaintext"
 export PATH="~/nvim-linux64/bin:$PATH"
 export PATH="~/bin:$PATH"
